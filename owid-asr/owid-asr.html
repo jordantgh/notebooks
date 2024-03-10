@@ -155,7 +155,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="crude-death-rates" class="level2">
 <h2 class="anchored" data-anchor-id="crude-death-rates">Crude death rates</h2>
 <p>To calculate crude death rates from COPD, we need the total number of COPD deaths and total population in each country. To calculate total deaths, we can use the provided death rates in combination with UN population data.</p>
-<div id="3358f78d" class="cell" data-message="true" data-execution_count="1">
+<div id="ed975513" class="cell" data-message="true" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Ingest and transform demographic Data</span></span>
@@ -220,7 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>uganda_crude <span class="op">=</span> crude_death_rate(uganda_mortalities, uganda_2019[<span class="st">"Pop (10E-3)"</span>])</span>
 <span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>usa_crude <span class="op">=</span> crude_death_rate(usa_mortalities, usa_2019[<span class="st">"Pop (10E-3)"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="7f89b4f4" class="cell" data-execution_count="2">
+<div id="52397949" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 *********************
@@ -235,7 +235,7 @@ USA: 57.2
 <section id="age-standardised-death-rates" class="level2">
 <h2 class="anchored" data-anchor-id="age-standardised-death-rates">Age standardised death rates</h2>
 <p>Differing demographics across nations is a major confounding factor in comparing health outcomes, thus, age standardised death rates are often preferred. The age standardised death rate is the average of age-specific death rates, weighted by the fraction of each age group in the standard population. With age-specific COPD rates and the WHO Standard Population Distribution in hand, we can calculate this quantity directly for both Uganda and the United States.</p>
-<div id="d0f13884" class="cell" data-message="true" data-execution_count="3">
+<div id="58f8e5ad" class="cell" data-message="true" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>who_population <span class="op">=</span> pd.read_csv(<span class="st">"data/who-population.csv"</span>, header<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>population_weights <span class="op">=</span> who_population[<span class="st">"WHO World Standard*"</span>][:<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span> <span class="dv">100</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -245,7 +245,7 @@ USA: 57.2
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>uganda_asr <span class="op">=</span> <span class="bu">round</span>(uganda_mortalities.dot(population_weights), <span class="dv">1</span>)</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>usa_asr <span class="op">=</span> <span class="bu">round</span>(usa_mortalities.dot(population_weights), <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="f5d25d31" class="cell" data-execution_count="4">
+<div id="9a3bfcf9" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ********************************
@@ -260,7 +260,7 @@ USA: 28.4
 <section id="ancillary-note-on-the-demographic-structure-of-the-two-countries" class="level2">
 <h2 class="anchored" data-anchor-id="ancillary-note-on-the-demographic-structure-of-the-two-countries">Ancillary note on the demographic structure of the two countries</h2>
 <p>The age profiles of the two countries differ dramatically.</p>
-<div id="816005ac" class="cell" data-execution_count="5">
+<div id="026dc51f" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Percentage of the population in each age group</span></span>
@@ -331,7 +331,7 @@ USA: 35.1%
 </div>
 <div class="cell-output cell-output-display">
 
-            <div id="XqNXsr"></div>
+            <div id="dGrOGh"></div>
             <script type="text/javascript" data-lets-plot-script="library">
                 if(!window.letsPlotCallQueue) {
                     window.letsPlotCallQueue = [];
@@ -355,16 +355,16 @@ USA: 35.1%
                         var div = document.createElement("div");
                         div.style.color = 'darkred';
                         div.textContent = 'Error loading Lets-Plot JS';
-                        document.getElementById("XqNXsr").appendChild(div);
+                        document.getElementById("dGrOGh").appendChild(div);
                     };
-                    var e = document.getElementById("XqNXsr");
+                    var e = document.getElementById("dGrOGh");
                     e.appendChild(script);
                 })()
             </script>
             
 </div>
-<div class="cell-output cell-output-display" data-execution_count="5">
-   <div id="JqSy6Z"></div>
+<div class="cell-output cell-output-display" data-execution_count="11">
+   <div id="IYB0L4"></div>
    <script type="text/javascript" data-lets-plot-script="plot">
        (function() {
            var plotSpec={
@@ -410,7 +410,7 @@ USA: 35.1%
 }],
 "metainfo_list":[]
 };
-           var plotContainer = document.getElementById("JqSy6Z");
+           var plotContainer = document.getElementById("IYB0L4");
            window.letsPlotCall(function() {{
                LetsPlot.buildPlotFromProcessedSpecs(plotSpec, -1, -1, plotContainer);
            }});

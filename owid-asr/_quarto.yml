@@ -1,6 +1,6 @@
 project:
   title: "owid-asr"
   type: website
-  output-dir: docs
+  output-dir: "."
 
 
