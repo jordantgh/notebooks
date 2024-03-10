@@ -1,0 +1,194 @@
+---
+title: "USA & Uganda COPD: Age Standardised Mortality Rates"
+editor_options:
+  markdown:
+    wrap: none
+execute: 
+  echo: false
+  warning: false
+  message: false
+toc: true
+---
+
+# Summary
+
+This report calculates and compares death rates from Chronic Obstructive Pulmonary Disease (COPD) in Uganda and the United States in 2019. Steps taken were to ingest and filter datasets, calculate crude death rates, and then calculate age standardised death rates. All death rates are reported as deaths per 100,000 population. The crude death rates are 5.8 in Uganda and 57.2 in the United States, perhaps surprisingly since Uganda has higher mortality in each age group. However, after adjusting for the age distribution of the population, the COPD death rates in Uganda and the United States are very similar, at 28.7 and 28.4 respectively. This is because the United States has a much older population than Uganda, and COPD is primarily a disease of the elderly. Even though the death rates in Uganda are an *order of magnitude higher* for younger age groups, these are very small portion of all COPD deaths. The mortality signal remains dominated by over 50s in the age standardised data, and in these groups death rates are similar in both countries.
+
+## Crude death rates
+
+To calculate crude death rates from COPD, we need the total number of COPD deaths and total population in each country. To calculate total deaths, we can use the provided death rates in combination with UN population data.
+
+```{python}
+# | echo: true
+# | warning: true
+# | message: true
+
+import pandas as pd
+
+# Ingest and transform demographic Data
+pop_2019 = (
+    pd.read_excel(
+        "data/WPP2022_POP_F02_1_POPULATION_5-YEAR_AGE_GROUPS_BOTH_SEXES.xlsx",
+        sheet_name="Estimates",
+        header=16,
+        usecols=[
+            "Region, subregion, country or area *",
+            "Year",
+        ] + [f"{i}-{i+4}" for i in range(0, 100, 5)] + ["100+"]
+    )
+    .rename(
+        columns={
+            "Region, subregion, country or area *": "Country",
+            "Total Population, as of 1 July (thousands)": "Pop (10E-3)",
+        }
+    )
+    # convert to long format
+    .melt(
+        id_vars=["Country", "Year"],
+        value_vars=[f"{i}-{i+4}" for i in range(0, 100, 5)] + ["100+"],
+        var_name="Age",
+        value_name="Pop (10E-3)"
+    )[lambda x: x["Year"] == 2019].drop("Year", axis=1)
+)
+
+
+def agg_over85(df):
+    """Aggregate all 85+ age groups into a single category.
+    This is to match the WHO standard population distribution."""
+
+    ages = ["85-89", "90-94", "95-99", "100+"]
+    under_85s = df[~df["Age"].isin(ages)] 
+
+    over_85s = pd.DataFrame({
+        "Country": [df.iloc[0]["Country"]],
+        "Age": ["85+"],
+        "Pop (10E-3)": [df[df["Age"].isin(ages)]["Pop (10E-3)"].sum()]
+    })
+    
+    return pd.concat([under_85s, over_85s], ignore_index=True)
+
+
+uganda_2019 = agg_over85(pop_2019[pop_2019["Country"] == "Uganda"])
+usa_2019 = agg_over85(
+    pop_2019[pop_2019["Country"] == "United States of America"]
+)
+
+# Calculate crude death rates
+copd_mortality = pd.read_excel("data/mortality-rates.xlsx")
+
+
+def crude_death_rate(mortalities, populations):
+    return round(((mortalities * populations).sum() / populations.sum()), 1)
+
+
+uganda_mortalities = copd_mortality["Death rate, Uganda, 2019"]
+usa_mortalities = copd_mortality["Death rate, United States, 2019"]
+
+uganda_crude = crude_death_rate(uganda_mortalities, uganda_2019["Pop (10E-3)"])
+usa_crude = crude_death_rate(usa_mortalities, usa_2019["Pop (10E-3)"])
+```
+
+```{python}
+print(f"""
+*********************
+| Crude Death Rates |
+*********************
+Uganda: {uganda_crude}
+USA: {usa_crude}
+""")
+```
+
+## Age standardised death rates
+
+Differing demographics across nations is a major confounding factor in comparing health outcomes, thus, age standardised death rates are often preferred. The age standardised death rate is the average of age-specific death rates, weighted by the fraction of each age group in the standard population. With age-specific COPD rates and the WHO Standard Population Distribution in hand, we can calculate this quantity directly for both Uganda and the United States.
+
+```{python}
+#| echo: true
+#| warning: true
+#| message: true
+
+who_population = pd.read_csv("data/who-population.csv", header=1)
+population_weights = who_population["WHO World Standard*"][:-1] / 100
+
+# Since we have age specific death rates and the standard population, we don"t
+# need totals -- we can calculate the age standardised rate directly
+
+uganda_asr = round(uganda_mortalities.dot(population_weights), 1)
+usa_asr = round(usa_mortalities.dot(population_weights), 1)
+```
+
+```{python}
+print(f"""
+********************************
+| Age Standardised Death Rates |
+********************************
+Uganda: {uganda_asr}
+USA: {usa_asr}
+""")
+```
+
+## Ancillary note on the demographic structure of the two countries
+
+The age profiles of the two countries differ dramatically.
+
+```{python}
+#| echo: true
+#| code-fold: true
+
+# Percentage of the population in each age group
+uganda_2019["RelPop"] = (
+    uganda_2019["Pop (10E-3)"] * 100 / uganda_2019["Pop (10E-3)"].sum()
+)
+
+
+usa_2019["RelPop"] = (
+    usa_2019["Pop (10E-3)"] * 100 / usa_2019["Pop (10E-3)"].sum()
+)
+
+over50 = [f"{i}-{i+4}" for i in range(50, 85, 5)] + ["85+"]
+
+# Percentage over 50 for both countries
+uganda_over50 = round(
+  uganda_2019[uganda_2019["Age"].isin(over50)]["RelPop"].sum(), 1
+)
+
+usa_over50 = round(
+  usa_2019[usa_2019["Age"].isin(over50)]["RelPop"].sum(), 1
+)
+
+print(f"""
+**********************
+| Population over 50 |
+**********************
+Uganda: {uganda_over50}%
+USA: {usa_over50}%
+""")
+
+# 6.6, 35.1 - Uganda has 6.6% of its population over 50, USA has 35.1%
+
+# This is why the crude death rate is so much higher in the USA
+
+from math import ceil
+from lets_plot import *
+from lets_plot.mapping import as_discrete
+LetsPlot.setup_html()
+
+uganda_2019["RelPop"] = -uganda_2019["RelPop"]
+combined = pd.concat([uganda_2019, usa_2019])
+
+limit = max(abs(combined["RelPop"].min()), abs(combined["RelPop"]).max())
+limit = ceil(limit / 5) * 5
+
+breaks = [n for n in range(-int(limit), int(limit)+1, 5)]
+
+(
+    ggplot(combined, aes(x=as_discrete("Age"), y="RelPop", fill="Country")) +
+    geom_bar(stat="identity") +
+    coord_flip() +
+    scale_y_continuous(
+        breaks=breaks,
+        labels=[str(abs(n)) for n in breaks],
+        limits=[-20,20]
+    )
+)
+```
