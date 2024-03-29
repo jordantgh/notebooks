@@ -1,0 +1,202 @@
+---
+title: "R Basics: Data Analysis"
+format: html
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r include=FALSE}
+knitr::purl("basic-data-analysis.qmd")
+```
+
+
+## Data ingestion
+
+The first step when doing any kind of data analysis with code is getting
+the data in and cleaning it up. Compared to using Excel, GraphPad, etc,
+this is arguably the point of highest relative friction when working
+with code. Programming languages prefer data in a neat and tidy tabular
+format, and usually it isn't like that to begin with, so we have to do
+some cleaning and reshaping.
+
+This takes some work, but depending on the purposes, is often worth it
+in the end.
+
+```{r warning=FALSE, message=FALSE}
+#| column: page
+
+library(readxl) # A useful library for reading Excel files
+
+alamar_raw_plate <- read_excel(
+  "jt58 etoposide kill curve 24h post eto wt vs 3ko13 3ko17 alamar.xlsx",
+  range = "B15:M22", # For plate data, know where your plate reader puts it!
+  col_names = FALSE
+)
+
+# Or, since we only use read_excel, we could just write `readxl::read_excel`
+# (This is better practice than loading the entire library for one function)
+
+alamar_raw <- alamar_raw_plate[1:7, 2:10] # Trim away empty wells
+# Or, equivalently: alamar_raw <- alamar_raw_plate[-8, 2:10]
+
+columns <- c(
+  "WT_Par_1", "WT_Par_2", "WT_Par_3",
+  "M3KO_13_1", "M3KO_13_2", "M3KO_13_3",
+  "M3KO_17_1", "M3KO_17_2", "M3KO_17_3"
+)
+
+colnames(alamar_raw) <- columns
+
+# Get and subtract the control wells
+
+background <- as.numeric(alamar_raw[1,]) # `mean()` won't work on a data frame
+avg_background <- mean(background)
+
+alamar_corrected <- alamar_raw - avg_background # Subtracts from each well
+alamar_corrected <- alamar_corrected[-1,] # Remove the control wells
+
+# Set the concentrations and add to the table
+
+etoposide_concs <- rev(c(0, 10^seq(0, 2, by = 0.5)))
+alamar_corrected$conc <- etoposide_concs
+
+# Print out a preview of the data frame
+knitr::kable(alamar_corrected) # kable() gives us the table in a pretty format
+```
+
+## Reshaping the data
+
+The data is still not in the format modelling and plotting functions
+expect.
+
+The key to tidy data is simple enough: one column per variable. This is
+the format that most data analysis software expects or tries to force
+data to be in.
+
+The "why" of tidy data is discussed at length by Hadley Wickham, chief
+scientist at Posit (who make RStudio). If interested, take a gander:
+https://vita.had.co.nz/papers/tidy-data.pdf
+
+For a more practical guide, you can look here:
+https://r4ds.had.co.nz/tidy-data.html
+
+In this code, I use the `tidyr` library, and there is a *very* helpful
+cheetsheet that I basically always check when I need to use it, if you
+just want a quick answer on how to do a given thing:
+https://rstudio.github.io/cheatsheets/tidyr.pdf
+
+The `pivot_longer` function here lets us turn the unique columns for
+each genotype and replicate in the above into a simpler data frame with
+one genotype column and one replicate column. In practise, we don't need
+the replicate column but I've included it here just to be explicit.
+
+```{r warning=FALSE, message=FALSE}
+
+alamar <- tidyr::pivot_longer(
+  data = alamar_corrected,
+  cols = -conc, # all columns except `conc`
+  names_sep = "_",
+  names_to = c("genotype", "clone", "replicate"),
+  values_to = "corrected_absorbance"
+)
+
+knitr::kable(head(alamar, 10)) # Just show the first 10 rows
+```
+
+## Modelling and plotting
+
+Now that we have the data in the right format, we can use R's tools for
+making statistical models and plotting them. Since we have dose-response
+data, we can use the `drc` package. Normally, dose-response curves in
+biology are not linear, but S-shaped, and we typically model S-shaped
+data with so called "logistic" models, usually the "4-parameter"
+logistic model (the 4 parameters are: minimum, maximum, slope steepness,
+and inflection point). `drc` gives us easy access to a whole family of
+dose response models, so we don't really have to get into the maths.
+
+```{r warning=FALSE, message=FALSE}
+library(drc) # Both drm & LL.4() are from this library, so OK to import it all
+
+dose_response_model <- drm(
+  corrected_absorbance ~ conc, # Model absorbance as a function of concentration
+  fct = LL.4(), # This says to use the 4-parameter logistic model
+  curveid = genotype, # This says: do a separate model/curve for each genotype
+  data = alamar # specifies the dataframe
+)
+
+ec50 <- ED(dose_response_model, 50) # (We can choose any %, not just 50%)
+
+plot(dose_response_model)
+abline(v=c(ec50[1],ec50[2]), col=c("blue", "red"), lty=c(1,3))
+```
+
+## Making the plot prettier
+
+The base R plots are fine for a quick and dirty inspection, but
+depending on what you want to show, there are far more powerful
+libraries.
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+library(ggprism)
+
+# First set the genotype to a factor so we can control the order (for legends)
+# (ggplot will convert it under the hood, and the default order is alphabetical)
+alamar$genotype <- factor(alamar$genotype, levels = c("WT", "M3KO"))
+
+# Then we make the labels useful for plotting
+levels(alamar$genotype) <- c("Wild-type", "IFITM3 KO")
+
+max_y <- max(alamar$corrected_absorbance)
+
+plot <- ggplot(
+  alamar,
+  aes(x = conc, y = corrected_absorbance, color = genotype, fill = genotype)
+)
+
+plot <- plot +
+  geom_line(
+    stat = "smooth",
+    method = drm,
+    method.args = list(fct = LL.4()),
+    linewidth = 2,
+    se = FALSE
+  ) +
+  geom_point(
+    color = "black",
+    pch = 21,
+    size = 3,
+    alpha = 0.8,
+    stroke = 1.2
+  ) +
+  scale_color_manual(values = c("#5278ec", "#bb0c40")) +
+  scale_fill_manual(values = c("#5278ec", "#bb0c40")) +
+  theme_prism(base_size = 14) +
+  scale_y_continuous(limits = c(NA, max_y * 1.1)) +
+  scale_x_continuous(
+    trans = scales::pseudo_log_trans(0.1),
+    labels = scales::label_number(drop0trailing = TRUE),
+    breaks = c(0, 0.3, 1, 3, 10, 30, 100)
+  ) +
+  labs(x = "Etoposide (µM)", y = "Abs (450)")
+
+# add the EC50 lines
+plot <- plot +
+  geom_vline(
+    xintercept = ec50[1],
+    color = "#5278ec",
+    linewidth = 1.1,
+    linetype = 2
+  ) +
+  geom_vline(
+    xintercept = ec50[2],
+    color = "#bb0c40",
+    linewidth = 1.1,
+    linetype = 3
+  )
+
+plot$theme[c("legend.text.align", "legend.title.align")] <- NULL
+
+plot
+```
