@@ -1,0 +1,6 @@
+project:
+  title: "gam-adjustment"
+  type: website
+  output-dir: "."
+
+
