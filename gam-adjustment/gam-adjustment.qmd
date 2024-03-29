@@ -20,10 +20,10 @@ It's worth noting that if plotting is the goal, the `plot.gam` function does pro
 Let's start with a relatively simple model:
 
 $$
-y = b_0 + b_1 x + b_2 z^2 + \epsilon
+y = \beta_0 + \beta_1 x + \beta_2 z^2 + \epsilon
 $$
 
-with $x \sim \text{Bernoulli}(0.5)$, $z \sim \mathcal{N}(2, 1)$, and $\epsilon \sim \mathcal{N}(0, 100)$.
+with $x \sim \text{Bernoulli}(0.5)$, $z \sim \mathcal{N}(0, 1)$, and $\epsilon \sim \mathcal{N}(0, 100)$.
 
 The form is somewhat arbitrary, except that we have a non-linear term in $z$ to demonstrate some of the advantages of using a GAM over a GLM. I have also made the error term fairly large to keep the p-value from being too small for meaningful comparisons.
 
