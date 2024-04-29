@@ -1,0 +1,4 @@
+project:
+  title: "quarto-python-prompts"
+  type: website
+  output-dir: "."

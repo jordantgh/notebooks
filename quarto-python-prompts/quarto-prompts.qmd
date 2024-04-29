@@ -1,0 +1,165 @@
+---
+title: "Quarto prompts to python functions"
+execute: 
+  eval: false
+---
+
+## Intro
+
+Applications built around the use of calls to various LLM provider APIs (e.g., OpenAI, Anthropic, Google) are increasingly popular. I have built such an application as part of my PhD to extract structured information from scientific literature. Prompting LLMs with natural language instructions in the context of a highly structured codebase presents some challenges. How should you store prompts, and what's the best way to give them dynamic features?
+
+I have developed a workflow that suits me, and I'm sharing it here. I am not explaining how it works here -- I plan to write a blog about it and will link back here once that's done.
+
+The basic recipe is:
+
+- Prompts are stored in a centralised directory and written as quarto markdown files (like this document!) - this gives us access to nice syntax highlighting and formatting, suited both for editing prompts in a readable way, and for working with `jinja` based template rendering approaches (more on this later).
+- Every time a prompt is updated & changes saved, a script runs converting the prompt into a python function.
+- The module holding all "prompt functions" can be loaded in to scripts where prompts are deployed.
+
+Currently my solution will only work on linux. Other requirements:
+
+- `direnv` - this allows us to make a project-specific monitoring hook using an `.envrc` file
+- `inotify-tools` - we use this for monitoring the prompts folder
+- `at` - this allows our hook script (which calls `inotifywait`) to run from `.envrc` without hanging up the terminal
+- `jinja2` python package - used for rendering prompt templates
+- `quarto` - for a nice editing experience with syntax highlighting goodies
+
+## Steps
+
+1. Create bash hook script
+
+Make sure you have `inotifywait` available (if not, install `inotify-tools`). Create a `hook.sh` script as follows (or name it as you like).
+
+```{bash}
+#!/bin/bash
+
+PROMPTS=/path/to/prompts
+
+inotifywait -m -e close_write,create,delete --format '%w%f' "$PROMPTS" | while read FILE
+do
+  if [[ "$FILE" ==  *.qmd ]]; then
+    python prompt_loader.py --path $PROMPTS
+  fi
+done
+```
+
+This script uses `inotifywait` to monitor the `PROMPTS` directory for changes. Whenever a `.qmd` file is modified, created, or deleted within this directory, it runs the `prompt_loader.py` script.
+
+Make sure to make the script executable:
+
+`chmod +x hook.sh`
+
+2. Setup direnv/envrc
+
+Ensure `direnv` and `at` are installed on your system. Create an `.envrc` file in the root directory of your project as follows:
+
+```{bash}
+pid=$(ps aux | grep -v grep | grep hook.sh | awk '{print $2}')
+if [ -z "$pid" ]; then
+  echo "Initial run"
+  python prompt_loader.py --path prompts
+  echo "Starting hook..."
+  echo './hook.sh' | at now
+else
+  echo "Hook is already running"
+fi
+```
+
+This script checks if `hook.sh` is already running. If not, it runs `prompt_loader.py` once and schedules the `hook.sh` script to run immediately using the `at` command. 
+
+3. Python script to write prompts to python functions
+
+Create a `prompt_loader.py` script in the root directory of your project. Code is below or just run `wget "https://gist.github.com/jordantgh/1b22990cd66671e33a1aeef9f2cc2350"`.
+
+```{python}
+#| code-fold: true
+
+import os
+import re
+import sys
+import importlib.util
+import argparse
+
+
+def extract_variables(template_content):
+    pattern = re.compile(r"<var\s+(\w+)\s*>")
+    return sorted(set(pattern.findall(template_content)))
+
+
+def generate_function_code(
+    function_name, template_content, variables, template_path
+):
+    params = ", ".join([f"{var}: str = None" for var in variables])
+    template_args = ", ".join([f"{var}={var}" for var in variables])
+    return f"""
+def {function_name}({params}) -> str:
+    '''/{template_path}\n---\n{template_content}'''
+    template = env.get_template('{os.path.basename(template_path)}')
+    return template.render({template_args})
+"""
+
+
+def setup(prompts_dir):
+    code_string = f"""from jinja2 import Environment, FileSystemLoader
+    
+env = Environment(
+    loader=FileSystemLoader('{prompts_dir}'),
+    variable_start_string='<var',
+    variable_end_string='>',
+    comment_start_string='<!--',
+    comment_end_string='-->',
+)
+    """
+
+    templates = [f for f in os.listdir(prompts_dir) if f.endswith(".qmd")]
+
+    for filename in templates:
+        template_path = os.path.join(prompts_dir, filename)
+        function_name = filename[:-4]  # Remove .qmd extension
+        with open(template_path, "r") as f:
+            template_content = f.read()
+
+        variables = extract_variables(template_content)
+        code_string += generate_function_code(
+            function_name, template_content, variables, template_path
+        )
+
+    functions_dir = os.path.join(prompts_dir, "functions")
+    os.makedirs(functions_dir, exist_ok=True)
+
+    temp_file = os.path.join(functions_dir, "pyprompts.py")
+
+    with open(temp_file, "w") as f:
+        f.write(code_string)
+
+    spec = importlib.util.spec_from_file_location("pyprompts", temp_file)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Provide path to prompts directory"
+    )
+
+    parser.add_argument("--path", type=str, help="path to prompts directory")
+    args = parser.parse_args()
+    setup(args.path)
+```
+
+This script:
+
+- Extracts Jinja2 variables from the prompt templates, using custom syntax adapted for `quarto`'s conventions
+- Generates Python functions for each prompt template
+- Creates a `pyprompts.py` module in the `PROMPTS` directory containing all the generated functions
+- Imports the `pyprompts` module into the current Python environment (this )
+
+4. Import prompts module in your code
+
+To use the generated prompt functions in your code, simply import the `pyprompts` module:
+
+```python
+import prompts.functions.pyprompts
+```
+Now you all of your prompts will be available with intellisense.
