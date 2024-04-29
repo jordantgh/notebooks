@@ -30,7 +30,7 @@ Currently my solution will only work on linux. Other requirements:
 
 Make sure you have `inotifywait` available (if not, install `inotify-tools`). Create a `hook.sh` script as follows (or name it as you like).
 
-```{bash}
+```bash
 #!/bin/bash
 
 PROMPTS=/path/to/prompts
@@ -53,7 +53,7 @@ Make sure to make the script executable:
 
 Ensure `direnv` and `at` are installed on your system. Create an `.envrc` file in the root directory of your project as follows:
 
-```{bash}
+```bash
 pid=$(ps aux | grep -v grep | grep hook.sh | awk '{print $2}')
 if [ -z "$pid" ]; then
   echo "Initial run"
@@ -132,10 +132,14 @@ env = Environment(
     with open(temp_file, "w") as f:
         f.write(code_string)
 
-    spec = importlib.util.spec_from_file_location("pyprompts", temp_file)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
+    pycache_path = os.path.join(functions_dir, "__pycache__")
+    if not os.path.exists(pycache_path) or not any(
+        f.endswith(".pyc") for f in os.listdir(pycache_path)
+    ):
+        spec = importlib.util.spec_from_file_location("pyprompts", temp_file)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
 
 
 if __name__ == "__main__":
