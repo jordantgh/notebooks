@@ -158,16 +158,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Create bash hook script</li>
 </ol>
 <p>Make sure you have <code>inotifywait</code> available (if not, install <code>inotify-tools</code>). Create a <code>hook.sh</code> script as follows (or name it as you like).</p>
-<pre class="{bash}"><code>#!/bin/bash
-
-PROMPTS=/path/to/prompts
-
-inotifywait -m -e close_write,create,delete --format '%w%f' "$PROMPTS" | while read FILE
-do
-  if [[ "$FILE" ==  *.qmd ]]; then
-    python prompt_loader.py --path $PROMPTS
-  fi
-done</code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">PROMPTS</span><span class="op">=</span>/path/to/prompts</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">inotifywait</span> <span class="at">-m</span> <span class="at">-e</span> close_write,create,delete <span class="at">--format</span> <span class="st">'%w%f'</span> <span class="st">"</span><span class="va">$PROMPTS</span><span class="st">"</span> <span class="kw">|</span> <span class="cf">while</span> <span class="bu">read</span> <span class="va">FILE</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> <span class="kw">[[</span> <span class="st">"</span><span class="va">$FILE</span><span class="st">"</span> <span class="ot">==</span>  <span class="pp">*</span>.qmd <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="ex">python</span> prompt_loader.py <span class="at">--path</span> <span class="va">$PROMPTS</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">fi</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This script uses <code>inotifywait</code> to monitor the <code>PROMPTS</code> directory for changes. Whenever a <code>.qmd</code> file is modified, created, or deleted within this directory, it runs the <code>prompt_loader.py</code> script.</p>
 <p>Make sure to make the script executable:</p>
 <p><code>chmod +x hook.sh</code></p>
@@ -175,21 +175,21 @@ done</code></pre>
 <li>Setup direnv/envrc</li>
 </ol>
 <p>Ensure <code>direnv</code> and <code>at</code> are installed on your system. Create an <code>.envrc</code> file in the root directory of your project as follows:</p>
-<pre class="{bash}"><code>pid=$(ps aux | grep -v grep | grep hook.sh | awk '{print $2}')
-if [ -z "$pid" ]; then
-  echo "Initial run"
-  python prompt_loader.py --path prompts
-  echo "Starting hook..."
-  echo './hook.sh' | at now
-else
-  echo "Hook is already running"
-fi</code></pre>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">pid</span><span class="op">=</span><span class="va">$(</span><span class="fu">ps</span> aux <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> grep <span class="kw">|</span> <span class="fu">grep</span> hook.sh <span class="kw">|</span> <span class="fu">awk</span> <span class="st">'{print $2}'</span><span class="va">)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">"</span><span class="va">$pid</span><span class="st">"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Initial run"</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">python</span> prompt_loader.py <span class="at">--path</span> prompts</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Starting hook..."</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">'./hook.sh'</span> <span class="kw">|</span> <span class="ex">at</span> now</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Hook is already running"</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This script checks if <code>hook.sh</code> is already running. If not, it runs <code>prompt_loader.py</code> once and schedules the <code>hook.sh</code> script to run immediately using the <code>at</code> command.</p>
 <ol start="3" type="1">
 <li>Python script to write prompts to python functions</li>
 </ol>
 <p>Create a <code>prompt_loader.py</code> script in the root directory of your project. Code is below or just run <code>wget "https://gist.github.com/jordantgh/1b22990cd66671e33a1aeef9f2cc2350"</code>.</p>
-<div id="d2fb55e4" class="cell" data-execution_count="1">
+<div id="e5d9ed92" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
@@ -250,20 +250,24 @@ fi</code></pre>
 <span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> <span class="bu">open</span>(temp_file, <span class="st">"w"</span>) <span class="im">as</span> f:</span>
 <span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>        f.write(code_string)</span>
 <span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>    spec <span class="op">=</span> importlib.util.spec_from_file_location(<span class="st">"pyprompts"</span>, temp_file)</span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>    module <span class="op">=</span> importlib.util.module_from_spec(spec)</span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>    sys.modules[spec.name] <span class="op">=</span> module</span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    spec.loader.exec_module(module)</span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>    parser <span class="op">=</span> argparse.ArgumentParser(</span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"Provide path to prompts directory"</span></span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>    parser.add_argument(<span class="st">"--path"</span>, <span class="bu">type</span><span class="op">=</span><span class="bu">str</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"path to prompts directory"</span>)</span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>    args <span class="op">=</span> parser.parse_args()</span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    setup(args.path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>    pycache_path <span class="op">=</span> os.path.join(functions_dir, <span class="st">"__pycache__"</span>)</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> os.path.exists(pycache_path) <span class="kw">or</span> <span class="kw">not</span> <span class="bu">any</span>(</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>        f.endswith(<span class="st">".pyc"</span>) <span class="cf">for</span> f <span class="kw">in</span> os.listdir(pycache_path)</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    ):</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>        spec <span class="op">=</span> importlib.util.spec_from_file_location(<span class="st">"pyprompts"</span>, temp_file)</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        module <span class="op">=</span> importlib.util.module_from_spec(spec)</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>        sys.modules[spec.name] <span class="op">=</span> module</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>        spec.loader.exec_module(module)</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>    parser <span class="op">=</span> argparse.ArgumentParser(</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"Provide path to prompts directory"</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>    parser.add_argument(<span class="st">"--path"</span>, <span class="bu">type</span><span class="op">=</span><span class="bu">str</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"path to prompts directory"</span>)</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    args <span class="op">=</span> parser.parse_args()</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>    setup(args.path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>This script:</p>
