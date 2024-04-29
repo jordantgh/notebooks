@@ -26,7 +26,7 @@ Currently my solution will only work on linux. Other requirements:
 
 ## Steps
 
-1. Create bash hook script
+### 1. Create bash hook script
 
 Make sure you have `inotifywait` available (if not, install `inotify-tools`). Create a `hook.sh` script as follows (or name it as you like).
 
@@ -49,7 +49,7 @@ Make sure to make the script executable:
 
 `chmod +x hook.sh`
 
-2. Setup direnv/envrc
+### 2. Setup direnv/envrc
 
 Ensure `direnv` and `at` are installed on your system. Create an `.envrc` file in the root directory of your project as follows:
 
@@ -67,7 +67,7 @@ fi
 
 This script checks if `hook.sh` is already running. If not, it runs `prompt_loader.py` once and schedules the `hook.sh` script to run immediately using the `at` command. 
 
-3. Python script to write prompts to python functions
+### 3. Python script to write prompts to python functions
 
 Create a `prompt_loader.py` script in the root directory of your project. Code is below or just run `wget "https://gist.github.com/jordantgh/1b22990cd66671e33a1aeef9f2cc2350"`.
 
@@ -159,7 +159,7 @@ This script:
 - Creates a `pyprompts.py` module in the `PROMPTS` directory containing all the generated functions
 - Imports the `pyprompts` module into the current Python environment (this )
 
-4. Import prompts module in your code
+### 4. Import prompts module in your code
 
 To use the generated prompt functions in your code, simply import the `pyprompts` module:
 

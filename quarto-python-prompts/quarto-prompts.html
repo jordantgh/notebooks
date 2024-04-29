@@ -154,9 +154,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="steps" class="level2">
 <h2 class="anchored" data-anchor-id="steps">Steps</h2>
-<ol type="1">
-<li>Create bash hook script</li>
-</ol>
+<section id="create-bash-hook-script" class="level3">
+<h3 class="anchored" data-anchor-id="create-bash-hook-script">1. Create bash hook script</h3>
 <p>Make sure you have <code>inotifywait</code> available (if not, install <code>inotify-tools</code>). Create a <code>hook.sh</code> script as follows (or name it as you like).</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -171,9 +170,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This script uses <code>inotifywait</code> to monitor the <code>PROMPTS</code> directory for changes. Whenever a <code>.qmd</code> file is modified, created, or deleted within this directory, it runs the <code>prompt_loader.py</code> script.</p>
 <p>Make sure to make the script executable:</p>
 <p><code>chmod +x hook.sh</code></p>
-<ol start="2" type="1">
-<li>Setup direnv/envrc</li>
-</ol>
+</section>
+<section id="setup-direnvenvrc" class="level3">
+<h3 class="anchored" data-anchor-id="setup-direnvenvrc">2. Setup direnv/envrc</h3>
 <p>Ensure <code>direnv</code> and <code>at</code> are installed on your system. Create an <code>.envrc</code> file in the root directory of your project as follows:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">pid</span><span class="op">=</span><span class="va">$(</span><span class="fu">ps</span> aux <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-v</span> grep <span class="kw">|</span> <span class="fu">grep</span> hook.sh <span class="kw">|</span> <span class="fu">awk</span> <span class="st">'{print $2}'</span><span class="va">)</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">"</span><span class="va">$pid</span><span class="st">"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
@@ -185,11 +184,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Hook is already running"</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This script checks if <code>hook.sh</code> is already running. If not, it runs <code>prompt_loader.py</code> once and schedules the <code>hook.sh</code> script to run immediately using the <code>at</code> command.</p>
-<ol start="3" type="1">
-<li>Python script to write prompts to python functions</li>
-</ol>
+</section>
+<section id="python-script-to-write-prompts-to-python-functions" class="level3">
+<h3 class="anchored" data-anchor-id="python-script-to-write-prompts-to-python-functions">3. Python script to write prompts to python functions</h3>
 <p>Create a <code>prompt_loader.py</code> script in the root directory of your project. Code is below or just run <code>wget "https://gist.github.com/jordantgh/1b22990cd66671e33a1aeef9f2cc2350"</code>.</p>
-<div id="e5d9ed92" class="cell" data-execution_count="1">
+<div id="754d04cd" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
@@ -277,14 +276,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Creates a <code>pyprompts.py</code> module in the <code>PROMPTS</code> directory containing all the generated functions</li>
 <li>Imports the <code>pyprompts</code> module into the current Python environment (this )</li>
 </ul>
-<ol start="4" type="1">
-<li>Import prompts module in your code</li>
-</ol>
+</section>
+<section id="import-prompts-module-in-your-code" class="level3">
+<h3 class="anchored" data-anchor-id="import-prompts-module-in-your-code">4. Import prompts module in your code</h3>
 <p>To use the generated prompt functions in your code, simply import the <code>pyprompts</code> module:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> prompts.functions.pyprompts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Now you all of your prompts will be available with intellisense.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
