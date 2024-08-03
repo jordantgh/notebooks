@@ -38,6 +38,7 @@ To model this effectively we can use log odds and log odds ratios. We shall assu
 ```{python}
 import numpy as np
 import pandas as pd
+from IPython.display import display, HTML
 
 prevalence = 0.01
 C = prevalence / (1 - prevalence)
@@ -50,7 +51,15 @@ ln_OR_a = np.log(OR_alpha)
 ln_OR_b = np.log(OR_beta)
 ln_OR_ab = np.log(OR_alpha_beta)
 
-print(ln_C, ln_OR_a, ln_OR_b, ln_OR_ab)
+data = {
+    'Parameter': ['ln(C)', 'ln(OR_alpha)', 'ln(OR_beta)', 'ln(OR_alpha_beta)'],
+    'Value': [ln_C, ln_OR_a, ln_OR_b, ln_OR_ab]
+}
+
+df = pd.DataFrame(data)
+df['Value'] = df['Value'].round(4)
+
+HTML(df.round(3).to_html(index=False))
 ```
 
 We can compute the odds (and therefore prevalence) of a disease for a given genotype using following formula.
@@ -95,8 +104,6 @@ df_results = pd.DataFrame(
     ]
 )
 
-
-from IPython.display import display, HTML
 
 HTML(df_results.round(3).to_html(index=False))
 ```
