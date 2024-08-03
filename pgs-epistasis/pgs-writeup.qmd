@@ -16,6 +16,8 @@ knitr::opts_chunk$set(
   message = NA,
   warning = FALSE,
   comment = NA,
+  fig.height = 4,
+  fig.width = 5,
   fig.align = "center",
   fig.retina = TRUE
 )
@@ -33,35 +35,45 @@ Suppose there is a disease $D$ with a baseline frequency in the population of 1%
 
 [^1]: This could be shown in a molecular genetics context if, for example, mice with total genetic deficiency in both $A$ and $B$ have a phenotypic effect that is larger than the sum of the the effects of deficiency in $A$ or $B$ separately (since the deleterious effect of deficiency in $A$ would have simultaneously been blunted by loss of its negative regulatory activity towards $B$). Note first of all that it does not follow from this scenario that $\alpha$ is epistatic with $\beta$. For $\alpha$ to epistatic with $\beta$, $\alpha$ would have to specifically affect the ability of $A$ to negatively regulate the function of $B$, but this is not guaranteed. It might be that $\alpha$ affects the ability of $A$ to independently regulate $P$ without affecting its feedback function. The key observation here is that genes are *pleiotropic*, that is, have multiple functions, and a mutation in any given gene does not necessarily interfere with all of its functions.
 
-To model this effectively we can use log odds and log odds ratios. We shall assume a baseline disease prevalence of 1% and convert the relevant quantities to log space.
+To model this effectively we can use log odds and log odds ratios (OR). We shall assume a baseline disease prevalence (C) of 1% and convert the relevant quantities to log odds/ORs.
 
 ```{python}
+# | html-table-processing: none
+
 import numpy as np
 import pandas as pd
 from IPython.display import display, HTML
 
-prevalence = 0.01
-C = prevalence / (1 - prevalence)
+C = 0.01
+C_odds = C / (1 - C)
 OR_alpha = 2
 OR_beta = 2
 OR_alpha_beta = 3
 
-ln_C = np.log(C)
+ln_C_odds = np.log(C_odds)
 ln_OR_a = np.log(OR_alpha)
 ln_OR_b = np.log(OR_beta)
 ln_OR_ab = np.log(OR_alpha_beta)
 
-data = {
-    'Parameter': ['ln(C)', 'ln(OR_alpha)', 'ln(OR_beta)', 'ln(OR_alpha_beta)'],
-    'Value': [ln_C, ln_OR_a, ln_OR_b, ln_OR_ab]
-}
+df = pd.DataFrame(
+    {
+        "Parameter": [
+            "log(C_odds)",
+            "log(OR_alpha)",
+            "log(OR_beta)",
+            "log(OR_alpha_x_beta)",
+        ],
+        "Value": [ln_C_odds, ln_OR_a, ln_OR_b, ln_OR_ab],
+    }
+)
 
-df = pd.DataFrame(data)
-df['Value'] = df['Value'].round(4)
+html_table = df.round(3).to_html(index=False)
+table_narrow = f'<div style="width: 50%; margin: auto;">{html_table}</div>'
 
-HTML(df.round(3).to_html(index=False))
+HTML(table_narrow)
 ```
 
+\
 We can compute the odds (and therefore prevalence) of a disease for a given genotype using following formula.
 
 $$
@@ -76,32 +88,38 @@ We can compute the prevalence of disease in each group using the equation above,
 
 ```{python}
 def log_odds(a, b, epistasis_dummy=1):
-    return ln_C + ln_OR_a * a + ln_OR_b * b + ln_OR_ab * a * b * epistasis_dummy
+    return (
+        ln_C_odds
+        + ln_OR_a * a
+        + ln_OR_b * b
+        + ln_OR_ab * a * b * epistasis_dummy
+    )
+
 
 genotypes = {
-    'Neither Mutation': (0, 0, 99.60, 99600000, 1),
-    'Only Mutation α': (1, 0, 0.20, 200000, 1),
-    'Only Mutation β': (0, 1, 0.20, 200000, 1),
-    'Both Mutations': (1, 1, 0.0004, 400, 1),
-    'Both Mutations (no epistasis)': (1, 1, 0.0004, 400, 0)
+    "Neither Mutation": (0, 0, 99.60, 99600000, 1),
+    "Only Mutation α": (1, 0, 0.20, 200000, 1),
+    "Only Mutation β": (0, 1, 0.20, 200000, 1),
+    "Both Mutations": (1, 1, 0.0004, 400, 1),
+    "Both Mutations (no epistasis)": (1, 1, 0.0004, 400, 0),
 }
 
 results = []
 for genotype, (a, b, freq, n_pop, epistasis_dummy) in genotypes.items():
-    odds = np.exp(log_odds(a, b, epistasis_dummy))
-    prevalence = 100 * odds / (1 + odds)
-    n_cases = round(prevalence * n_pop)
-    results.append([genotype, prevalence, freq, n_pop, n_cases])
+    C_odds = np.exp(log_odds(a, b, epistasis_dummy))
+    C = 100 * C_odds / (1 + C_odds)
+    n_cases = round(C * n_pop)
+    results.append([genotype, C, freq, n_pop, n_cases])
 
 df_results = pd.DataFrame(
     results,
     columns=[
-        'Genotype',
-        'Disease Prevalence (%)',
-        'Frequency (%)',
-        'Population Size',
-        'Number of Cases'
-    ]
+        "Genotype",
+        "Disease Prevalence (%)",
+        "Frequency (%)",
+        "Population Size",
+        "Number of Cases",
+    ],
 )
 
 
@@ -119,22 +137,27 @@ The effect sizes used in the above example are quite unrealistic. The very rares
 
 ```{python}
 snp_info = [
-    ('1', 0.02, 1.44, None, None),
-    ('2', 0.06, 1.24, None, None),
-    ('3', 0.05, 1.21, '8', 1.41),
-    ('4', 0.07, 1.11, None, None),
-    ('5', 0.08, 1.14, '7', 1.30),
-    ('6', 0.10, 1.05, None, None),
-    ('7', 0.09, 1.10, '5', 1.30),
-    ('8', 0.01, 1.48, '3', 1.41),
-    ('9', 0.03, 1.33, '10', 1.25),
-    ('10', 0.04, 1.32, '9', 1.25)
+    ("1", 0.02, 1.44, None, None),
+    ("2", 0.06, 1.24, None, None),
+    ("3", 0.05, 1.21, "8", 1.41),
+    ("4", 0.07, 1.11, None, None),
+    ("5", 0.08, 1.14, "7", 1.30),
+    ("6", 0.10, 1.05, None, None),
+    ("7", 0.09, 1.10, "5", 1.30),
+    ("8", 0.01, 1.48, "3", 1.41),
+    ("9", 0.03, 1.33, "10", 1.25),
+    ("10", 0.04, 1.32, "9", 1.25),
 ]
 
 snp_df = pd.DataFrame(
-    snp_info, columns=[
-        'SNP', 'MAF', 'Odds Ratio', 'Epistatic Partner', 'Epistatic Effect'
-    ]
+    snp_info,
+    columns=[
+        "SNP",
+        "MAF",
+        "Odds Ratio",
+        "Epistatic Partner",
+        "Epistatic Effect",
+    ],
 )
 
 HTML(snp_df.to_html(index=False))
@@ -152,43 +175,47 @@ import pandas as pd
 np.random.seed(42)  # For reproducibility
 n_individuals = 100000
 
-snp_df['ln_or'] = np.log(snp_df['Odds Ratio'])
-snp_df['ln_epi_effect'] = np.log(snp_df['Epistatic Effect'].fillna(1))
-snp_df.set_index('SNP', inplace=True)
+snp_df["ln_or"] = np.log(snp_df["Odds Ratio"])
+snp_df["ln_epi_effect"] = np.log(snp_df["Epistatic Effect"].fillna(1))
+snp_df.set_index("SNP", inplace=True)
 
-genotypes = pd.DataFrame({
-    snp: np.random.binomial(2, maf, n_individuals).astype(np.int8)
-    for snp, maf in snp_df['MAF'].items()
-})
+genotypes = pd.DataFrame(
+    {
+        snp: np.random.binomial(2, maf, n_individuals).astype(np.int8)
+        for snp, maf in snp_df["MAF"].items()
+    }
+)
 
-prevalence = 0.01
-C = prevalence / (1 - prevalence)
-ln_C = np.full(n_individuals, np.log(C))
+C = 0.01
+C_odds = C / (1 - C)
+ln_C_odds = np.full(n_individuals, np.log(C))
 
-def array_log_odds(genotypes, snp_df, ln_C):
-    ln_odds = ln_C.copy()
-    ln_odds_no_epi = ln_C.copy()
+
+def array_log_odds(genotypes, snp_df, ln_C_odds):
+    ln_odds = ln_C_odds.copy()
+    ln_odds_no_epi = ln_C_odds.copy()
 
     for snp, info in snp_df.iterrows():
-        ln_odds += np.where(genotypes[snp] == 1, info['ln_or'], 0)
-        ln_odds_no_epi += np.where(genotypes[snp] == 1, info['ln_or'], 0)
+        ln_odds += np.where(genotypes[snp] == 1, info["ln_or"], 0)
+        ln_odds_no_epi += np.where(genotypes[snp] == 1, info["ln_or"], 0)
 
-        partner = info['Epistatic Partner']
+        partner = info["Epistatic Partner"]
         if pd.notna(partner):
             ln_odds += np.where(
                 (genotypes[snp] == 1) & (genotypes[partner] == 1),
-                info['ln_epi_effect'],
-                0
+                info["ln_epi_effect"],
+                0,
             )
 
     return ln_odds, ln_odds_no_epi
 
-genotypes['ln_odds_with_epi'], genotypes['ln_odds_no_epi'] = array_log_odds(
-    genotypes, snp_df, ln_C
+
+genotypes["ln_odds_with_epi"], genotypes["ln_odds_no_epi"] = array_log_odds(
+    genotypes, snp_df, ln_C_odds
 )
 
-genotypes['odds_with_epi'] = np.exp(genotypes['ln_odds_with_epi'])
-genotypes['odds_no_epistasis'] = np.exp(genotypes['ln_odds_no_epi'])
+genotypes["odds_with_epi"] = np.exp(genotypes["ln_odds_with_epi"])
+genotypes["odds_no_epistasis"] = np.exp(genotypes["ln_odds_no_epi"])
 
 HTML(genotypes.head(10).round(3).to_html(index=False))
 ```
@@ -198,12 +225,12 @@ For simulated individuals that aren't positive for any of our epistatic SNPS (3,
 
 ```{python}
 # Calculate disease probabilities
-genotypes['prob_with_epistasis'] = (
-    genotypes['odds_with_epi'] / (1 + genotypes['odds_with_epi'])
+genotypes["prob_with_epistasis"] = genotypes["odds_with_epi"] / (
+    1 + genotypes["odds_with_epi"]
 )
 
-genotypes['prob_no_epistasis'] = (
-    genotypes['odds_no_epistasis'] / (1 + genotypes['odds_no_epistasis'])
+genotypes["prob_no_epistasis"] = genotypes["odds_no_epistasis"] / (
+    1 + genotypes["odds_no_epistasis"]
 )
 
 # Compare the models
@@ -286,13 +313,13 @@ all_combinations = list(
 # Convert to DataFrame
 variances = pd.DataFrame(
     all_combinations,
-    columns=['total', 'additive_proportion', 'frac_epi_additive']
+    columns=["total", "additive_proportion", "frac_epi_additive"],
 )
 
 # Calculate additive and interaction heritabilities
-variances['additive'] = variances['total'] * variances['additive_proportion']
-variances['interaction'] = variances['total'] - variances['additive']
-variances.drop(columns=['additive_proportion'], inplace=True)
+variances["additive"] = variances["total"] * variances["additive_proportion"]
+variances["interaction"] = variances["total"] - variances["additive"]
+variances.drop(columns=["additive_proportion"], inplace=True)
 
 
 with ThreadPoolExecutor() as executor:
@@ -303,36 +330,37 @@ with ThreadPoolExecutor() as executor:
             n_samples=n_samples,
             n_snps=n_snps,
             n_causal_snps=20,
-            additive_variance=row['additive'],
-            interaction_variance=row['interaction'],
+            additive_variance=row["additive"],
+            interaction_variance=row["interaction"],
             n_pairs=5,
-            frac_epi_additive=row['frac_epi_additive'],
+            frac_epi_additive=row["frac_epi_additive"],
             maf=0.5,
-            n_reps=n_reps
-        ): i for i, row in variances.iterrows()
+            n_reps=n_reps,
+        ): i
+        for i, row in variances.iterrows()
     }
     results = pd.concat([future.result() for future in future_to_params])
 
 mean_results = (
     results.groupby(
         [
-            'additive_variance',
-            'interaction_variance',
-            'frac_epi_additive',
-            'true_total_variance'
+            "additive_variance",
+            "interaction_variance",
+            "frac_epi_additive",
+            "true_total_variance",
         ]
     )
     .agg(
         mean_adj_r_squared=pd.NamedAgg(
-            column='adj_r_squared', aggfunc=lambda x: round(abs(x.mean()), 3)
+            column="adj_r_squared", aggfunc=lambda x: round(abs(x.mean()), 3)
         )
     )
     .reset_index()
 )
 
-r = mean_results[
-    mean_results['additive_variance'] == 0.45
-]['mean_adj_r_squared'].mean()
+r = mean_results[mean_results["additive_variance"] == 0.45][
+    "mean_adj_r_squared"
+].mean()
 
 HTML(mean_results.to_html(index=False))
 ```
