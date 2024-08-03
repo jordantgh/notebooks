@@ -1,0 +1,4 @@
+project:
+  title: "pgs-writeup"
+  type: website
+  output-dir: "."

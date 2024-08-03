@@ -1,0 +1,4 @@
+/.quarto/
+*.json
+__pycache__
+.venv
