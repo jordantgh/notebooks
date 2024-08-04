@@ -150,7 +150,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>I decided to try and write up some of my experiments working with <a href="https://www.genome.gov/Health/Genomics-and-Medicine/Polygenic-risk-scores">polygenic scores</a> (PGSs) and their statistical properties. PGSs are indices that sum the total effect of many genetic variants a person might have on an outcome of interest, intended to serve as potentially useful predictors for health and disease. The genetic variants chosen for inclusion in PGS calculations derive from genome wide association studies (GWAS), which find potentially subtle genetic changes (single nucleotide polymorphisms [SNPs]) associated with diseases or other phenotypes. Most GWAS SNPs exhibit tiny individual effects on any given phenotype; however, it is argued that if many are counted together, a better picture of real-world risk may emerge. PGSs have been touted for diseases from coronary heart disease to breast cancer. There is some debate about the efficacy of PGS. The best (most predictive) scores yet published still explain only a small fraction of variance in any given outcome. There are many possible reasons for this. One of these, which is the focus of what I will be describing here, is that PGS are <em>additive</em> scores – they are ultimately computed in a very simple minded way, by adding up the individual effects for each variant in a straightforward linear fashion. This precludes the idea that some variants might interact with one another in more complex ways - for example, one variant might <em>amplify</em> the effect of another, or could even cancel it out. Such phenomena are examples of <em>epistasis</em>, which is pervasive in biological systems – genes almost never function in isolation, but rather are almost universally regulated by (and involved in regulating) the activity of other genes. Thus, it stands to reason that the failure of PGS to account for epistasis may be an important contributor to their failures in real world prediction.</p>
+<p>I decided to try and write up some of my experiments working with <a href="https://www.genome.gov/Health/Genomics-and-Medicine/Polygenic-risk-scores" target="_blank">polygenic scores</a> (PGSs) and their statistical properties. PGSs are indices that sum the total effect of many genetic variants a person might have on an outcome of interest, intended to serve as potentially useful predictors for health and disease. The genetic variants chosen for inclusion in PGS calculations derive from genome wide association studies (GWAS), which find potentially subtle genetic changes (single nucleotide polymorphisms [SNPs]) associated with diseases or other phenotypes. Most GWAS SNPs exhibit tiny individual effects on any given phenotype; however, it is argued that if many are counted together, a better picture of real-world risk may emerge. PGSs have been touted for diseases from coronary heart disease to breast cancer. There is some debate about the efficacy of PGS. The best (most predictive) scores yet published still explain only a small fraction of variance in any given outcome. There are many possible reasons for this. One of these, which is the focus of what I will be describing here, is that PGS are <em>additive</em> scores – they are ultimately computed in a very simple minded way, by adding up the individual effects for each variant in a straightforward linear fashion. This precludes the idea that some variants might interact with one another in more complex ways - for example, one variant might <em>amplify</em> the effect of another, or could even cancel it out. Such phenomena are examples of <em>epistasis</em>, which is pervasive in biological systems – genes almost never function in isolation, but rather are almost universally regulated by (and involved in regulating) the activity of other genes. Thus, it stands to reason that the failure of PGS to account for epistasis may be an important contributor to their failures in real world prediction.</p>
 <section id="a-simple-example" class="level2">
 <h2 class="anchored" data-anchor-id="a-simple-example">A simple example</h2>
 <p>This critique is not novel, and is often dismissed by advocates of PGS. There are some theoretical arguments that epistasis, despite being pervasive, may not be a major source of overall phenotypic <em>population variation</em>. The fact that two genes may interact in the normal course of their biological functioning doesn’t imply that the <em>co-occurrence</em> of mutations in both genes results in epistatic effects, or that any epistasis that does result is a quantitatively significant contributor to extant phenotypic variation. The best way to make the case for this is to consider a simple example.</p>
@@ -329,7 +329,7 @@ The question from the point of view of PGS scores and the impact of epistasis is
 </section>
 <section id="a-slightly-more-complex-example" class="level2">
 <h2 class="anchored" data-anchor-id="a-slightly-more-complex-example">A slightly more complex example</h2>
-<p>The effect sizes used in the above example are quite unrealistic. The very rarest and strongest single common SNP effect sizes may exhibit a <a href="https://www.pnas.org/doi/10.1073/pnas.1114759108">20-30% increase</a> in disease risk. However, real diseases are governed by hundreds to thousands of variants, so the question regarding epistasis is really more about whether many small epistatic effects could undermine the accuracy of a test based on many small additive effects. To see what this looks like, consider the following example. In this example, we’ll have 10 SNPs linked to some disease state, each of which with an associated minor-allele frequency (MAF; we’ll consider the minor (less common) allele to be the “risk” allele of interest here - that is, the <em>harmful</em> version of the gene) and effect size, which we’ll report here as an odds ratio:<br>
+<p>The effect sizes used in the above example are quite unrealistic. The very rarest and strongest single common SNP effect sizes may exhibit a <a href="https://www.pnas.org/doi/10.1073/pnas.1114759108" target="_blank">20-30% increase</a> in disease risk. However, real diseases are governed by hundreds to thousands of variants, so the question regarding epistasis is really more about whether many small epistatic effects could undermine the accuracy of a test based on many small additive effects. To see what this looks like, consider the following example. In this example, we’ll have 10 SNPs linked to some disease state, each of which with an associated minor-allele frequency (MAF; we’ll consider the minor (less common) allele to be the “risk” allele of interest here - that is, the <em>harmful</em> version of the gene) and effect size, which we’ll report here as an odds ratio:<br>
 <br>
 </p>
 <div class="cell" data-layout-align="center">
@@ -839,7 +839,7 @@ p_i = \sum_{j=1}^{n_{\text{causal\_snps}}} \textbf{SNP}_{\text{causal},ij} \cdot
 <td>0.00</td>
 <td>0.0</td>
 <td>0.0</td>
-<td>0.003</td>
+<td>0.004</td>
 </tr>
 <tr class="even">
 <td>0.00</td>
@@ -853,28 +853,28 @@ p_i = \sum_{j=1}^{n_{\text{causal\_snps}}} \textbf{SNP}_{\text{causal},ij} \cdot
 <td>0.10</td>
 <td>0.0</td>
 <td>0.2</td>
-<td>0.172</td>
+<td>0.169</td>
 </tr>
 <tr class="even">
 <td>0.10</td>
 <td>0.10</td>
 <td>1.0</td>
 <td>0.2</td>
-<td>0.120</td>
+<td>0.127</td>
 </tr>
 <tr class="odd">
 <td>0.20</td>
 <td>0.00</td>
 <td>0.0</td>
 <td>0.2</td>
-<td>0.196</td>
+<td>0.194</td>
 </tr>
 <tr class="even">
 <td>0.20</td>
 <td>0.00</td>
 <td>1.0</td>
 <td>0.2</td>
-<td>0.194</td>
+<td>0.197</td>
 </tr>
 <tr class="odd">
 <td>0.45</td>
@@ -888,27 +888,27 @@ p_i = \sum_{j=1}^{n_{\text{causal\_snps}}} \textbf{SNP}_{\text{causal},ij} \cdot
 <td>0.45</td>
 <td>1.0</td>
 <td>0.9</td>
-<td>0.785</td>
+<td>0.815</td>
 </tr>
 <tr class="odd">
 <td>0.90</td>
 <td>0.00</td>
 <td>0.0</td>
 <td>0.9</td>
-<td>0.900</td>
+<td>0.897</td>
 </tr>
 <tr class="even">
 <td>0.90</td>
 <td>0.00</td>
 <td>1.0</td>
 <td>0.9</td>
-<td>0.901</td>
+<td>0.900</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>Note that we have only two scenarios directly relevant to our original question here: a “highly epistatic” scenario where half of all heritability is due to epistatic variation (following the logic of the preceding discussion, this should be implausibly high), and a “highly additive” case where 80% of the heritability is from additive genetic variance. We can see clearly in the cases where both the additive and epistatic variance are equal to 0.45 (giving a true total <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>h</mi><mn>2</mn></msup><annotation encoding="application/x-tex">h^2</annotation></semantics></math> of 0.9), the variance explained by our additive only linear PGS model is ~0.8. If the true additive heritability is 0.45, this means we have have an excess <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math> of 0.35 due to “bleedthrough” from the non-linear process; i.e., around 77% of the ground truth epistatic heritability bleeds into the additive model.</p>
+<p>Note that we have only two scenarios directly relevant to our original question here: a “highly epistatic” scenario where half of all heritability is due to epistatic variation (following the logic of the preceding discussion, this should be implausibly high), and a “highly additive” case where 80% of the heritability is from additive genetic variance. We can see clearly in the cases where both the additive and epistatic variance are equal to 0.45 (giving a true total <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>h</mi><mn>2</mn></msup><annotation encoding="application/x-tex">h^2</annotation></semantics></math> of 0.9), the variance explained by our additive only linear PGS model is ~0.81. If the true additive heritability is 0.45, this means we have have an excess <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math> of 0.36 due to “bleedthrough” from the non-linear process; i.e., around 80% of the ground truth epistatic heritability bleeds into the additive model.</p>
 <p>The cause of this bleedthrough relates to the fact that sum of two random variables is correlated with their product. So, even an “interaction only” data generating process will have some non-zero <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math>, and it follows that a model with both additive and interaction terms will perform even better. We can look at this analytically, and say something more general about <em>how much</em> variance an additive model can explain for a non-additive process.</p>
 <p>Given</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><msub><mi>β</mi><mn>1</mn></msub><mi>A</mi><mo>+</mo><msub><mi>β</mi><mn>2</mn></msub><mi>B</mi></mrow><annotation encoding="application/x-tex">
@@ -1227,6 +1227,24 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     // clear code selection
     e.clearSelection();
   });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+          // target, if specified
+          link.setAttribute("target", "_blank");
+          if (link.getAttribute("rel") === null) {
+            link.setAttribute("rel", "noopener");
+          }
+      }
+    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,

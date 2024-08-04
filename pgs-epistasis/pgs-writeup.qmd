@@ -8,6 +8,7 @@ format:
     output-ext: "html"
     table-of-contents: true
     df-print: kable
+    link-external-newwindow: true
 html-math-method: mathml
 ---
 
