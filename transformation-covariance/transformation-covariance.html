@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.549">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>transformation-covariance - Linear Transformation Visualisation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body>
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-covariance-matrix-is-related-to-a-linear-transformation-of-white-data" id="toc-the-covariance-matrix-is-related-to-a-linear-transformation-of-white-data" class="nav-link active" data-scroll-target="#the-covariance-matrix-is-related-to-a-linear-transformation-of-white-data">The covariance matrix is related to a linear transformation of white data</a>
+  <ul class="collapse">
+  <li><a href="#linear-transformation-covariance-matrix" id="toc-linear-transformation-covariance-matrix" class="nav-link" data-scroll-target="#linear-transformation-covariance-matrix">Linear transformation &amp; covariance matrix</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Linear Transformation Visualisation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="the-covariance-matrix-is-related-to-a-linear-transformation-of-white-data" class="level1">
+<h1>The covariance matrix is related to a linear transformation of white data</h1>
+<p>This is a little tool I made to wrap my head around the relationship between the covariance matrix of bivariate data and the implied linear transformation of uncorrelated “white data”.</p>
+<p>I was initially just trying to understand principal component analysis. After all, I had read that principal components were eigenvectors of a covariance matrix, and that eigenvectors of a matrix are just directionaly invariant vectors under a linear transformation. But I needed a deepder geometric intuition for: what do those eigenvectors look like, and what is the “transformation” in this case? It turns out that the answer was a little hairier than I thought, but not too hairy.</p>
+<p>A helpful intuition comes from looking at a transformation of uncorrelated data. Such a transformation turns out to be a Cholesky factor of the covariance matrix. We can see here how the covariance matrix updates as we update the transforming matrix.</p>
+<section id="linear-transformation-covariance-matrix" class="level2">
+<h2 class="anchored" data-anchor-id="linear-transformation-covariance-matrix">Linear transformation &amp; covariance matrix</h2>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.3.2/math.min.js"></script>
+    <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #000;
+        stroke-width: 0.5px;
+        shape-rendering: crispEdges;
+      }
+      .vector-line {
+        stroke-width: 3px;
+      }
+      .original-vector {
+        stroke: orange;
+      }
+      .basis-x {
+        stroke: green;
+      }
+      .basis-y {
+        stroke: red;
+      }
+
+      circle {
+        opacity: 0.75;
+      }
+
+      .plot-area {
+        overflow: visible;
+      }
+
+      #input-matrix-container {
+        display: flex;
+        align-items: center;
+      }
+
+      #input-matrix {
+        display: inline-block;
+        margin-right: 20px;
+      }
+
+      .matrix-row {
+        display: flex;
+        margin-bottom: 0px;
+      }
+
+      .matrix-row label {
+        margin-right: 5px;
+      }
+
+      .matrix-row input {
+        width: 40px;
+      }
+
+      #column-labels {
+        display: flex;
+        justify-content: space-between;
+        width: 90px;
+        margin-top: 0px;
+        line-height: 1;
+      }
+
+      #column-labels span {
+        display: inline-block;
+        width: 40px;
+        text-align: center;
+        vertical-align: middle;
+        padding: 0px;
+        margin: 0px;
+      }
+
+      mjx-container[display="true"] {
+        margin: 0.1em 0 !important;
+      }
+    </style>
+  
+  
+    <div id="input-matrix-container">
+      <div id="input-matrix">
+        <div class="matrix-row">
+          <label><input id="a11" type="number" value="1" step="0.25"></label>
+          <label><input id="a12" type="number" value="0" step="0.25"></label>
+        </div>
+        <div class="matrix-row">
+          <label><input id="a21" type="number" value="0" step="0.25"></label>
+          <label><input id="a22" type="number" value="1" step="0.25"></label>
+        </div>
+      </div>
+      <div id="math-expression"></div>
+    </div>
+    <div id="column-labels">
+      <span>$$\boldsymbol{\color{green}{\hat{\imath}}}$$</span>
+      <span>$$\boldsymbol{\color{red}{\hat{\jmath}}}$$</span>
+    </div>
+    <div style="display: flex;">
+      <svg id="vis" width="600" height="600"></svg>
+      <div style="margin-left: 20px;">
+        <h4 class="anchored">Covariance Matrix:</h4>
+        <div id="covariance-matrix"></div>
+      </div>
+    </div>
+    <script id="Transform-script">
+const width = 600;
+const height = 600;
+const margin = 50;
+
+// scales
+const xScale = d3
+  .scaleLinear()
+  .domain([-10, 10])
+  .range([margin, width - margin]);
+const yScale = d3
+  .scaleLinear()
+  .domain([-10, 10])
+  .range([height - margin, margin]);
+
+// Add plot region/ axes
+const svg = d3.select("#vis");
+const plotArea = svg.append("g").attr("class", "plot-area");
+
+const xAxis = svg
+  .append("g")
+  .attr("class", "axis")
+  .attr("transform", `translate(0, ${yScale(0)})`)
+  .call(d3.axisBottom(xScale));
+const yAxis = svg
+  .append("g")
+  .attr("class", "axis")
+  .attr("transform", `translate(${xScale(0)}, 0)`)
+  .call(d3.axisLeft(yScale));
+
+plotArea.raise();
+
+// initial matrix + vectors
+const basisX = [1, 0];
+const basisY = [0, 1];
+const originalVector = [1, 1];
+let currentMatrix = [basisX, basisY];
+
+// Generate uncorrelated white data
+const numDataPoints = 1000;
+const xMean = 0;
+const yMean = 0;
+const variance = 1;
+
+let data = Array.from({ length: numDataPoints }, () => [
+  d3.randomNormal(xMean, variance)(),
+  d3.randomNormal(yMean, variance)(),
+]);
+
+const initialCovarianceMatrix = calculateCovarianceMatrix(data);
+
+// Calculate the eigen decomposition of the initial covariance matrix
+const { values: eigenvalues, vectors: eigenvectors } = math.eigs(
+  initialCovarianceMatrix
+);
+
+// Calculate the whitening transformation matrix
+function whiten(data, maxIts = 50, tolerance = 1e-15) {
+  let currentData = data.map(d => [...d]);
+  
+  for (let i = 0; i < maxIts; i++) {
+    const covMatrix = calculateCovarianceMatrix(currentData);
+    const { vectors: eigenvectors, values: eigenvalues } = math.eigs(covMatrix);
+
+    const whiteningMatrix = math.multiply(
+      math.diag(eigenvalues.map((v) => Math.sqrt(1 / v))),
+      math.transpose(eigenvectors)
+    );
+
+    currentData = currentData.map((d) => {
+      const result = math.multiply(whiteningMatrix, d);
+      return Array.isArray(result) ? result : result._data;
+    });
+
+    // Check for convergence
+    const newCovMatrix = calculateCovarianceMatrix(currentData);
+    const diffFromIdentity = math.subtract(newCovMatrix, math.identity(2));
+    if (math.norm(diffFromIdentity) < tolerance) {
+      console.log(`Converged after ${i + 1} iterations`);
+      break;
+    }
+  }
+
+  return currentData;
+}
+
+data = whiten(data);
+
+drawDataPoints();
+drawVectors();
+
+// listener
+document.querySelectorAll("input").forEach((input) => {
+  input.addEventListener("input", updateTransformation);
+});
+
+function drawVectors() {
+  // Select and update vector lines
+  plotArea
+    .selectAll("line.vector-line")
+    .data([originalVector, basisX, basisY])
+    .join("line")
+    .attr(
+      "class",
+      (d, i) =>
+        `vector-line ${
+          i === 0 ? "original-vector" : i === 1 ? "basis-x" : "basis-y"
+        }`
+    )
+    .attr("x1", xScale(0))
+    .attr("y1", yScale(0))
+    .attr("x2", (d) => xScale(d[0]))
+    .attr("y2", (d) => yScale(d[1]));
+}
+
+function drawDataPoints() {
+  // Select and update data points
+  plotArea
+    .selectAll("circle.data-point")
+    .data(data)
+    .join("circle")
+    .attr("class", "data-point")
+    .attr("cx", (d) => xScale(d[0]))
+    .attr("cy", (d) => yScale(d[1]))
+    .attr("r", 1);
+}
+
+function interpolateMatrices(startMatrix, endMatrix, t) {
+  return startMatrix.map((startRow, i) =>
+    startRow.map(
+      (startValue, j) => startValue + (endMatrix[i][j] - startValue) * t
+    )
+  );
+}
+
+function multiplyMatrixVector(matrix, vector) {
+  return [
+    math.add(
+      math.multiply(matrix[0][0], vector[0]),
+      math.multiply(matrix[0][1], vector[1])
+    ),
+    math.add(
+      math.multiply(matrix[1][0], vector[0]),
+      math.multiply(matrix[1][1], vector[1])
+    ),
+  ];
+}
+const animateTransformation = async (startMatrix, endMatrix) => {
+  const steps = 30;
+  const duration = 500;
+  const vectors = [originalVector, basisX, basisY];
+  const stepDuration = duration / steps;
+
+  for (let step = 0; step <= steps; step++) {
+    const startTime = performance.now();
+
+    const interpolatedMatrix = interpolateMatrices(
+      startMatrix,
+      endMatrix,
+      step / steps
+    );
+
+    const transformedVectors = vectors.map((v) =>
+      multiplyMatrixVector(interpolatedMatrix, v)
+    );
+
+    const transformedData = data.map((d) =>
+      multiplyMatrixVector(interpolatedMatrix, d)
+    );
+
+    plotArea
+      .selectAll("line.vector-line")
+      .data(transformedVectors)
+      .transition()
+      .duration(stepDuration)
+      .attr("x2", (d) => xScale(d[0]))
+      .attr("y2", (d) => yScale(d[1]));
+
+    plotArea
+      .selectAll("circle.data-point")
+      .data(transformedData)
+      .transition()
+      .duration(stepDuration)
+      .attr("cx", (d) => xScale(d[0]))
+      .attr("cy", (d) => yScale(d[1]));
+
+    await new Promise((resolve) => {
+      const timeElapsed = performance.now() - startTime;
+      const delay = Math.max(0, stepDuration - timeElapsed);
+      setTimeout(() => requestAnimationFrame(resolve), delay);
+    });
+  }
+};
+
+function calculateCovarianceMatrix(data) {
+  const n = data.length;
+  const means = data.reduce(
+    (acc, d) => [
+      math.add(acc[0], math.divide(d[0], n)),
+      math.add(acc[1], math.divide(d[1], n)),
+    ],
+    [0, 0]
+  );
+  const centeredData = data.map((d) => [
+    math.subtract(d[0], means[0]),
+    math.subtract(d[1], means[1]),
+  ]);
+
+  const covarianceMatrix = [
+    [0, 0],
+    [0, 0],
+  ];
+
+  centeredData.forEach((d) => {
+    covarianceMatrix[0][0] = math.add(
+      covarianceMatrix[0][0],
+      math.divide(math.multiply(d[0], d[0]), math.subtract(n, 1))
+    );
+    covarianceMatrix[0][1] = math.add(
+      covarianceMatrix[0][1],
+      math.divide(math.multiply(d[0], d[1]), math.subtract(n, 1))
+    );
+    covarianceMatrix[1][0] = math.add(
+      covarianceMatrix[1][0],
+      math.divide(math.multiply(d[1], d[0]), math.subtract(n, 1))
+    );
+    covarianceMatrix[1][1] = math.add(
+      covarianceMatrix[1][1],
+      math.divide(math.multiply(d[1], d[1]), math.subtract(n, 1))
+    );
+  });
+
+  return covarianceMatrix;
+}
+
+function updateTransformation() {
+  const a11 = parseFloat(document.getElementById("a11").value);
+  const a12 = parseFloat(document.getElementById("a12").value);
+  const a21 = parseFloat(document.getElementById("a21").value);
+  const a22 = parseFloat(document.getElementById("a22").value);
+  const newMatrix = [
+    [a11, a12],
+    [a21, a22],
+  ];
+
+  animateTransformation(currentMatrix, newMatrix);
+
+  currentMatrix = newMatrix;
+
+  // Update the LaTeX expression
+  const transformedVector = multiplyMatrixVector(currentMatrix, originalVector);
+
+  const latexExpression = `
+
+  \\begin{aligned}
+  
+  \\overset{
+    \\boldsymbol{\\color{green}{\\hat{\\imath}}} \\hspace{20pt}
+    \\boldsymbol{\\color{red}{\\hat{\\jmath}}}
+  }{
+  \\begin{bmatrix}
+  \\color{green}{\\mathbf{${a11}}} & \\color{red}{\\mathbf{${a12}}} \\\\
+  \\color{green}{\\mathbf{${a21}}} & \\color{red}{\\mathbf{${a22}}} 
+  \\end{bmatrix}
+  }
+
+  \\boldsymbol{\\times}
+  
+  \\begin{bmatrix}
+  \\color{orange}{\\mathbf{${originalVector[0]}}} \\\\
+  \\color{orange}{\\mathbf{${originalVector[1]}}} 
+  \\end{bmatrix}
+  
+  \\boldsymbol{=}
+  
+  \\begin{bmatrix}
+  \\color{green}{\\mathbf{${a11}}} \\color{black}{\\times}
+  \\color{orange}{\\mathbf{${originalVector[0]}}}
+  \\color{black}{\\boldsymbol{+}}
+  \\color{red}{\\mathbf{${a12}}} \\color{black}{\\times}
+  \\color{orange}{\\mathbf{${originalVector[1]}}} \\\\
+  
+  \\color{green}{\\mathbf{${a21}}} \\color{black}{\\times}
+  \\color{orange}{\\mathbf{${originalVector[0]}}}
+  \\color{black}{\\boldsymbol{+}}
+  \\color{red}{\\mathbf{${a22}}}
+  \\color{black}{\\times} \\color{orange}{\\mathbf{${originalVector[1]}}}
+  \\end{bmatrix}
+  
+  \\boldsymbol{=}
+  
+  \\begin{bmatrix}
+  \\color{orange}{\\mathbf{${transformedVector[0]}}} \\\\
+  \\color{orange}{\\mathbf{${transformedVector[1]}}}
+  \\end{bmatrix}
+  
+  \\end{aligned}`;
+
+  document.getElementById(
+    "math-expression"
+  ).innerHTML = `\\[ ${latexExpression} \\]`;
+
+  const transformedData = data.map((d) =>
+    multiplyMatrixVector(currentMatrix, d)
+  );
+  const covarianceMatrix = calculateCovarianceMatrix(transformedData);
+  const c11 = covarianceMatrix[0][0].toFixed(2);
+  const c12 = covarianceMatrix[0][1].toFixed(2);
+  const c21 = covarianceMatrix[1][0].toFixed(2);
+  const c22 = covarianceMatrix[1][1].toFixed(2);
+  const covarianceLatex = `\\begin{bmatrix}
+  ${c11} & ${c12} \\\\
+  ${c21} & ${c22}
+\\end{bmatrix}`;
+  document.getElementById("covariance-matrix").innerHTML = covarianceLatex;
+
+  MathJax.typeset();
+}
+
+updateTransformation();
+
+    </script>
+  
+<p>Of course, it might be that this sort of visualisation is only useful to someone with my specific set of confusions. It is also clearly fairly threadbare and there’s a lot more I can do and say here, both mathematically and coding-wise. It was, admittedly, in large part an exercise in learning a little bit of <code>D3.js</code>.</p>
+<p>A few things I’d like to add to this in the future:</p>
+<ul>
+<li>Directly show the principal components (instead of the basis vectors and an arbitrary <code>(1,1)</code> vector)</li>
+<li>Say more (and visualise) how the Cholesky decomposition of the covariance matrix relates</li>
+<li>Address my (frankly, still salient) confusion about how the the <em>eigenvectors of the covariance matrix</em> specifically relate to any analytically transparent properites of the transformation matrix. Probably this can be developed by playing around with the Cholesky decomposition.</li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,463 @@
+---
+title: "Linear Transformation Visualisation"
+editor_options:
+  markdown:
+    wrap: none
+execute: 
+  echo: false
+  warning: false
+  message: false
+toc: true
+---
+
+# The covariance matrix is related to a linear transformation of white data
+
+This is a little tool I made to wrap my head around the relationship between the covariance matrix of bivariate data and the implied linear transformation of uncorrelated "white data".
+
+I was initially just trying to understand principal component analysis. After all, I had read that principal components were eigenvectors of a covariance matrix, and that eigenvectors of a matrix are just directionaly invariant vectors under a linear transformation. But I needed a deepder geometric intuition for: what do those eigenvectors look like, and what is the "transformation" in this case? It turns out that the answer was a little hairier than I thought, but not too hairy.
+
+A helpful intuition comes from looking at a transformation of uncorrelated data. Such a transformation turns out to be a Cholesky factor of the covariance matrix. We can see here how the covariance matrix updates as we update the transforming matrix.
+
+## Linear transformation & covariance matrix
+
+```{=html}
+<head>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.3.2/math.min.js"></script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <style>
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #000;
+        stroke-width: 0.5px;
+        shape-rendering: crispEdges;
+      }
+      .vector-line {
+        stroke-width: 3px;
+      }
+      .original-vector {
+        stroke: orange;
+      }
+      .basis-x {
+        stroke: green;
+      }
+      .basis-y {
+        stroke: red;
+      }
+
+      circle {
+        opacity: 0.75;
+      }
+
+      .plot-area {
+        overflow: visible;
+      }
+
+      #input-matrix-container {
+        display: flex;
+        align-items: center;
+      }
+
+      #input-matrix {
+        display: inline-block;
+        margin-right: 20px;
+      }
+
+      .matrix-row {
+        display: flex;
+        margin-bottom: 0px;
+      }
+
+      .matrix-row label {
+        margin-right: 5px;
+      }
+
+      .matrix-row input {
+        width: 40px;
+      }
+
+      #column-labels {
+        display: flex;
+        justify-content: space-between;
+        width: 90px;
+        margin-top: 0px;
+        line-height: 1;
+      }
+
+      #column-labels span {
+        display: inline-block;
+        width: 40px;
+        text-align: center;
+        vertical-align: middle;
+        padding: 0px;
+        margin: 0px;
+      }
+
+      mjx-container[display="true"] {
+        margin: 0.1em 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="input-matrix-container">
+      <div id="input-matrix">
+        <div class="matrix-row">
+          <label><input id="a11" type="number" value="1" step="0.25" /></label>
+          <label><input id="a12" type="number" value="0" step="0.25" /></label>
+        </div>
+        <div class="matrix-row">
+          <label><input id="a21" type="number" value="0" step="0.25" /></label>
+          <label><input id="a22" type="number" value="1" step="0.25" /></label>
+        </div>
+      </div>
+      <div id="math-expression"></div>
+    </div>
+    <div id="column-labels">
+      <span>$$\boldsymbol{\color{green}{\hat{\imath}}}$$</span>
+      <span>$$\boldsymbol{\color{red}{\hat{\jmath}}}$$</span>
+    </div>
+    <div style="display: flex;">
+      <svg id="vis" width="600" height="600"></svg>
+      <div style="margin-left: 20px;">
+        <h4>Covariance Matrix:</h4>
+        <div id="covariance-matrix"></div>
+      </div>
+    </div>
+    <script id="Transform-script">
+const width = 600;
+const height = 600;
+const margin = 50;
+
+// scales
+const xScale = d3
+  .scaleLinear()
+  .domain([-10, 10])
+  .range([margin, width - margin]);
+const yScale = d3
+  .scaleLinear()
+  .domain([-10, 10])
+  .range([height - margin, margin]);
+
+// Add plot region/ axes
+const svg = d3.select("#vis");
+const plotArea = svg.append("g").attr("class", "plot-area");
+
+const xAxis = svg
+  .append("g")
+  .attr("class", "axis")
+  .attr("transform", `translate(0, ${yScale(0)})`)
+  .call(d3.axisBottom(xScale));
+const yAxis = svg
+  .append("g")
+  .attr("class", "axis")
+  .attr("transform", `translate(${xScale(0)}, 0)`)
+  .call(d3.axisLeft(yScale));
+
+plotArea.raise();
+
+// initial matrix + vectors
+const basisX = [1, 0];
+const basisY = [0, 1];
+const originalVector = [1, 1];
+let currentMatrix = [basisX, basisY];
+
+// Generate uncorrelated white data
+const numDataPoints = 1000;
+const xMean = 0;
+const yMean = 0;
+const variance = 1;
+
+let data = Array.from({ length: numDataPoints }, () => [
+  d3.randomNormal(xMean, variance)(),
+  d3.randomNormal(yMean, variance)(),
+]);
+
+const initialCovarianceMatrix = calculateCovarianceMatrix(data);
+
+// Calculate the eigen decomposition of the initial covariance matrix
+const { values: eigenvalues, vectors: eigenvectors } = math.eigs(
+  initialCovarianceMatrix
+);
+
+// Calculate the whitening transformation matrix
+function whiten(data, maxIts = 50, tolerance = 1e-15) {
+  let currentData = data.map(d => [...d]);
+  
+  for (let i = 0; i < maxIts; i++) {
+    const covMatrix = calculateCovarianceMatrix(currentData);
+    const { vectors: eigenvectors, values: eigenvalues } = math.eigs(covMatrix);
+
+    const whiteningMatrix = math.multiply(
+      math.diag(eigenvalues.map((v) => Math.sqrt(1 / v))),
+      math.transpose(eigenvectors)
+    );
+
+    currentData = currentData.map((d) => {
+      const result = math.multiply(whiteningMatrix, d);
+      return Array.isArray(result) ? result : result._data;
+    });
+
+    // Check for convergence
+    const newCovMatrix = calculateCovarianceMatrix(currentData);
+    const diffFromIdentity = math.subtract(newCovMatrix, math.identity(2));
+    if (math.norm(diffFromIdentity) < tolerance) {
+      console.log(`Converged after ${i + 1} iterations`);
+      break;
+    }
+  }
+
+  return currentData;
+}
+
+data = whiten(data);
+
+drawDataPoints();
+drawVectors();
+
+// listener
+document.querySelectorAll("input").forEach((input) => {
+  input.addEventListener("input", updateTransformation);
+});
+
+function drawVectors() {
+  // Select and update vector lines
+  plotArea
+    .selectAll("line.vector-line")
+    .data([originalVector, basisX, basisY])
+    .join("line")
+    .attr(
+      "class",
+      (d, i) =>
+        `vector-line ${
+          i === 0 ? "original-vector" : i === 1 ? "basis-x" : "basis-y"
+        }`
+    )
+    .attr("x1", xScale(0))
+    .attr("y1", yScale(0))
+    .attr("x2", (d) => xScale(d[0]))
+    .attr("y2", (d) => yScale(d[1]));
+}
+
+function drawDataPoints() {
+  // Select and update data points
+  plotArea
+    .selectAll("circle.data-point")
+    .data(data)
+    .join("circle")
+    .attr("class", "data-point")
+    .attr("cx", (d) => xScale(d[0]))
+    .attr("cy", (d) => yScale(d[1]))
+    .attr("r", 1);
+}
+
+function interpolateMatrices(startMatrix, endMatrix, t) {
+  return startMatrix.map((startRow, i) =>
+    startRow.map(
+      (startValue, j) => startValue + (endMatrix[i][j] - startValue) * t
+    )
+  );
+}
+
+function multiplyMatrixVector(matrix, vector) {
+  return [
+    math.add(
+      math.multiply(matrix[0][0], vector[0]),
+      math.multiply(matrix[0][1], vector[1])
+    ),
+    math.add(
+      math.multiply(matrix[1][0], vector[0]),
+      math.multiply(matrix[1][1], vector[1])
+    ),
+  ];
+}
+const animateTransformation = async (startMatrix, endMatrix) => {
+  const steps = 30;
+  const duration = 500;
+  const vectors = [originalVector, basisX, basisY];
+  const stepDuration = duration / steps;
+
+  for (let step = 0; step <= steps; step++) {
+    const startTime = performance.now();
+
+    const interpolatedMatrix = interpolateMatrices(
+      startMatrix,
+      endMatrix,
+      step / steps
+    );
+
+    const transformedVectors = vectors.map((v) =>
+      multiplyMatrixVector(interpolatedMatrix, v)
+    );
+
+    const transformedData = data.map((d) =>
+      multiplyMatrixVector(interpolatedMatrix, d)
+    );
+
+    plotArea
+      .selectAll("line.vector-line")
+      .data(transformedVectors)
+      .transition()
+      .duration(stepDuration)
+      .attr("x2", (d) => xScale(d[0]))
+      .attr("y2", (d) => yScale(d[1]));
+
+    plotArea
+      .selectAll("circle.data-point")
+      .data(transformedData)
+      .transition()
+      .duration(stepDuration)
+      .attr("cx", (d) => xScale(d[0]))
+      .attr("cy", (d) => yScale(d[1]));
+
+    await new Promise((resolve) => {
+      const timeElapsed = performance.now() - startTime;
+      const delay = Math.max(0, stepDuration - timeElapsed);
+      setTimeout(() => requestAnimationFrame(resolve), delay);
+    });
+  }
+};
+
+function calculateCovarianceMatrix(data) {
+  const n = data.length;
+  const means = data.reduce(
+    (acc, d) => [
+      math.add(acc[0], math.divide(d[0], n)),
+      math.add(acc[1], math.divide(d[1], n)),
+    ],
+    [0, 0]
+  );
+  const centeredData = data.map((d) => [
+    math.subtract(d[0], means[0]),
+    math.subtract(d[1], means[1]),
+  ]);
+
+  const covarianceMatrix = [
+    [0, 0],
+    [0, 0],
+  ];
+
+  centeredData.forEach((d) => {
+    covarianceMatrix[0][0] = math.add(
+      covarianceMatrix[0][0],
+      math.divide(math.multiply(d[0], d[0]), math.subtract(n, 1))
+    );
+    covarianceMatrix[0][1] = math.add(
+      covarianceMatrix[0][1],
+      math.divide(math.multiply(d[0], d[1]), math.subtract(n, 1))
+    );
+    covarianceMatrix[1][0] = math.add(
+      covarianceMatrix[1][0],
+      math.divide(math.multiply(d[1], d[0]), math.subtract(n, 1))
+    );
+    covarianceMatrix[1][1] = math.add(
+      covarianceMatrix[1][1],
+      math.divide(math.multiply(d[1], d[1]), math.subtract(n, 1))
+    );
+  });
+
+  return covarianceMatrix;
+}
+
+function updateTransformation() {
+  const a11 = parseFloat(document.getElementById("a11").value);
+  const a12 = parseFloat(document.getElementById("a12").value);
+  const a21 = parseFloat(document.getElementById("a21").value);
+  const a22 = parseFloat(document.getElementById("a22").value);
+  const newMatrix = [
+    [a11, a12],
+    [a21, a22],
+  ];
+
+  animateTransformation(currentMatrix, newMatrix);
+
+  currentMatrix = newMatrix;
+
+  // Update the LaTeX expression
+  const transformedVector = multiplyMatrixVector(currentMatrix, originalVector);
+
+  const latexExpression = `
+
+  \\begin{aligned}
+  
+  \\overset{
+    \\boldsymbol{\\color{green}{\\hat{\\imath}}} \\hspace{20pt}
+    \\boldsymbol{\\color{red}{\\hat{\\jmath}}}
+  }{
+  \\begin{bmatrix}
+  \\color{green}{\\mathbf{${a11}}} & \\color{red}{\\mathbf{${a12}}} \\\\
+  \\color{green}{\\mathbf{${a21}}} & \\color{red}{\\mathbf{${a22}}} 
+  \\end{bmatrix}
+  }
+
+  \\boldsymbol{\\times}
+  
+  \\begin{bmatrix}
+  \\color{orange}{\\mathbf{${originalVector[0]}}} \\\\
+  \\color{orange}{\\mathbf{${originalVector[1]}}} 
+  \\end{bmatrix}
+  
+  \\boldsymbol{=}
+  
+  \\begin{bmatrix}
+  \\color{green}{\\mathbf{${a11}}} \\color{black}{\\times}
+  \\color{orange}{\\mathbf{${originalVector[0]}}}
+  \\color{black}{\\boldsymbol{+}}
+  \\color{red}{\\mathbf{${a12}}} \\color{black}{\\times}
+  \\color{orange}{\\mathbf{${originalVector[1]}}} \\\\
+  
+  \\color{green}{\\mathbf{${a21}}} \\color{black}{\\times}
+  \\color{orange}{\\mathbf{${originalVector[0]}}}
+  \\color{black}{\\boldsymbol{+}}
+  \\color{red}{\\mathbf{${a22}}}
+  \\color{black}{\\times} \\color{orange}{\\mathbf{${originalVector[1]}}}
+  \\end{bmatrix}
+  
+  \\boldsymbol{=}
+  
+  \\begin{bmatrix}
+  \\color{orange}{\\mathbf{${transformedVector[0]}}} \\\\
+  \\color{orange}{\\mathbf{${transformedVector[1]}}}
+  \\end{bmatrix}
+  
+  \\end{aligned}`;
+
+  document.getElementById(
+    "math-expression"
+  ).innerHTML = `\\[ ${latexExpression} \\]`;
+
+  const transformedData = data.map((d) =>
+    multiplyMatrixVector(currentMatrix, d)
+  );
+  const covarianceMatrix = calculateCovarianceMatrix(transformedData);
+  const c11 = covarianceMatrix[0][0].toFixed(2);
+  const c12 = covarianceMatrix[0][1].toFixed(2);
+  const c21 = covarianceMatrix[1][0].toFixed(2);
+  const c22 = covarianceMatrix[1][1].toFixed(2);
+  const covarianceLatex = `\\begin{bmatrix}
+  ${c11} & ${c12} \\\\
+  ${c21} & ${c22}
+\\end{bmatrix}`;
+  document.getElementById("covariance-matrix").innerHTML = covarianceLatex;
+
+  MathJax.typeset();
+}
+
+updateTransformation();
+
+    </script>
+  </body>
+```
+
+Of course, it might be that this sort of visualisation is only useful to someone with my specific set of confusions. It is also clearly fairly threadbare and there's a lot more I can do and say here, both mathematically and coding-wise. It was, admittedly, in large part an exercise in learning a little bit of `D3.js`.
+
+A few things I'd like to add to this in the future:
+
+- Directly show the principal components (instead of the basis vectors and an arbitrary `(1,1)` vector)
+- Say more (and visualise) how the Cholesky decomposition of the covariance matrix relates
+- Address my (frankly, still salient) confusion about how the the *eigenvectors of the covariance matrix* specifically relate to any analytically transparent properites of the transformation matrix. Probably this can be developed by playing around with the Cholesky decomposition.

@@ -1,0 +1,4 @@
+project:
+  title: "transformation-covariance"
+  type: website
+  output-dir: "."
