@@ -65,7 +65,7 @@ preds <- predict(gam_model, type = "terms") |>
 df <- cbind(df, preds)
 ```
 
-On its own, this is not very informative. The `pp` object contains the predictions for each row of the data, but they are not on a scale that is immediately interpretable. We need to add back the intercept and the effect of $Z$ to get the "normalised" $Y$.
+On its own, this is not very informative. The `preds` object contains the predictions for each row of the data, but they are not on a scale that is immediately interpretable. We need to add back the intercept and the effect of $Z$ to get the "normalised" $Y$.
 
 ```{r}
 #| echo: false
